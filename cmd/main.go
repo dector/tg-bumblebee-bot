@@ -49,25 +49,31 @@ func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		entities = update.Message.Entities
 	}
 
-	for _, e := range entities {
-		// fmt.Printf("%+v\n", e)
-		// fmt.Printf("message: %s\n", update.Message.Text)
+	go func() {
+		defer func() {
+			recover()
+		}()
+		for _, e := range entities {
 
-		url := update.Message.Text[e.Offset:(e.Offset + e.Length)]
-		// fmt.Printf("url:%s\n", url)
+			if e.Type != models.MessageEntityTypeURL {
+				continue
+			}
 
-		if strings.HasPrefix(url, urlPrefixInstagram) {
-			newUrl := strings.Replace(url, urlPrefixInstagram, urlPrefixInstagramReplace, 1)
+			url := update.Message.Text[e.Offset:(e.Offset + e.Length)]
 
-			b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: update.Message.Chat.ID,
-				Text:   newUrl,
-				ReplyParameters: &models.ReplyParameters{
-					MessageID: update.Message.ID,
-				},
-			})
+			if strings.HasPrefix(url, urlPrefixInstagram) {
+				newUrl := strings.Replace(url, urlPrefixInstagram, urlPrefixInstagramReplace, 1)
+
+				b.SendMessage(ctx, &bot.SendMessageParams{
+					ChatID: update.Message.Chat.ID,
+					Text:   newUrl,
+					ReplyParameters: &models.ReplyParameters{
+						MessageID: update.Message.ID,
+					},
+				})
+			}
 		}
-	}
+	}()
 }
 
 const urlPrefixInstagram = "https://www.instagram.com"
