@@ -13,12 +13,17 @@ import (
 )
 
 func main() {
-	env, err := godotenv.Read(".env")
-	if err != nil {
-		panic(err)
-	}
+	err := godotenv.Load()
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	token := strings.TrimSpace(env["TG_BOT_TOKEN"])
+	var token string
+	token, ok := os.LookupEnv("TG_BOT_TOKEN")
+	if !ok {
+		panic("TG_BOT_TOKEN is not provided")
+	}
+	token = strings.TrimSpace(token)
 	if token == "" {
 		panic("TG_BOT_TOKEN is not provided")
 	}

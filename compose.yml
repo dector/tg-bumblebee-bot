@@ -1,0 +1,7 @@
+services:
+  app:
+    container_name: tg-bumblebee-bot
+    env_file: .env
+    build:
+      context: .
+      dockerfile: Containerfile
