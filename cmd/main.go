@@ -44,34 +44,41 @@ func main() {
 }
 
 func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	var entities []models.MessageEntity
-	if update.Message != nil {
-		entities = update.Message.Entities
+	if update.Message == nil {
+		return
 	}
+
+	entities := update.Message.Entities
 
 	go func() {
 		defer func() {
 			recover()
 		}()
+
 		for _, e := range entities {
+			defer func() {
+				recover()
+			}()
 
-			if e.Type != models.MessageEntityTypeURL {
-				continue
-			}
+			go func() {
+				if e.Type != models.MessageEntityTypeURL {
+					return
+				}
 
-			url := update.Message.Text[e.Offset:(e.Offset + e.Length)]
+				url := update.Message.Text[e.Offset:(e.Offset + e.Length)]
 
-			if strings.HasPrefix(url, urlPrefixInstagram) {
-				newUrl := strings.Replace(url, urlPrefixInstagram, urlPrefixInstagramReplace, 1)
+				if strings.HasPrefix(url, urlPrefixInstagram) {
+					newUrl := strings.Replace(url, urlPrefixInstagram, urlPrefixInstagramReplace, 1)
 
-				b.SendMessage(ctx, &bot.SendMessageParams{
-					ChatID: update.Message.Chat.ID,
-					Text:   newUrl,
-					ReplyParameters: &models.ReplyParameters{
-						MessageID: update.Message.ID,
-					},
-				})
-			}
+					b.SendMessage(ctx, &bot.SendMessageParams{
+						ChatID: update.Message.Chat.ID,
+						Text:   newUrl,
+						ReplyParameters: &models.ReplyParameters{
+							MessageID: update.Message.ID,
+						},
+					})
+				}
+			}()
 		}
 	}()
 }
