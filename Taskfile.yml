@@ -9,32 +9,9 @@ tasks:
   container:build:
     cmds:
       - podman build -t tg-bumblebee-bot:latest .
-      - mkdir -p out
-      - rm out/tg-bumblebee-bot.c.tar
-      - podman save -o out/tg-bumblebee-bot.c.tar tg-bumblebee-bot:latest
-    generates:
-      - out/tg-bumblebee-bot.c.tar
-    silent: true
-    status:
-      - container:_need_build
-
-  container:load:
-    deps:
-      - container:build
-    cmds:
-      - podman image rm tg-bumblebee-bot:latest
-      - podman load -i out/tg-bumblebee-bot.c.tar
     silent: true
 
   container:run:
-    deps:
-      - container:load
     cmds:
       - podman run --env-file .env tg-bumblebee-bot:latest
     silent: true
-
-  container:_need_build:
-    cmds:
-      - test ! -n "$SKIP_BUILD"
-    silent: true
-    internal: true
