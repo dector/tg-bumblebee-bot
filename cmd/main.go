@@ -10,6 +10,8 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"github.com/joho/godotenv"
+
+	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
 func main() {
