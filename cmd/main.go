@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -67,23 +68,33 @@ func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
 					return
 				}
 
-				url := update.Message.Text[e.Offset:(e.Offset + e.Length)]
-
-				if strings.HasPrefix(url, urlPrefixInstagram) {
-					newUrl := strings.Replace(url, urlPrefixInstagram, urlPrefixInstagramReplace, 1)
-
-					b.SendMessage(ctx, &bot.SendMessageParams{
-						ChatID: update.Message.Chat.ID,
-						Text:   newUrl,
-						ReplyParameters: &models.ReplyParameters{
-							MessageID: update.Message.ID,
-						},
-					})
+				rawUrl := update.Message.Text[e.Offset:(e.Offset + e.Length)]
+				aUrl, err := url.Parse(rawUrl)
+				if err != nil {
+					return
 				}
+
+				processUrl(b, ctx, aUrl, update)
 			}()
 		}
 	}()
 }
 
-const urlPrefixInstagram = "https://www.instagram.com"
-const urlPrefixInstagramReplace = "https://www.kkinstagram.com"
+func processUrl(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Update) {
+	if url.Host == "www.instagram.com" {
+		url.Host = "www.kkinstagram.com"
+		url.RawQuery = ""
+
+		sendReply(b, ctx, url, update)
+	}
+}
+
+func sendReply(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Update) {
+	b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID: update.Message.Chat.ID,
+		Text:   url.String(),
+		ReplyParameters: &models.ReplyParameters{
+			MessageID: update.Message.ID,
+		},
+	})
+}
