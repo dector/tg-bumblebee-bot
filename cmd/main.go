@@ -81,8 +81,8 @@ func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
 }
 
 func processUrl(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Update) {
-	if url.Host == "www.instagram.com" {
-		url.Host = "www.kkinstagram.com"
+	if url.Host == "www.instagram.com" || url.Host == "instagram.com" {
+		url.Host = "kkinstagram.com"
 		url.RawQuery = ""
 
 		sendReply(b, ctx, url, update)
