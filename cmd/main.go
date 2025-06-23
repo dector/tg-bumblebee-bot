@@ -86,6 +86,11 @@ func processUrl(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Up
 		url.RawQuery = ""
 
 		sendReply(b, ctx, url, update)
+	} else if url.Host == "x.com" {
+		url.Host = "fixupx.com"
+		url.RawQuery = ""
+
+		sendReply(b, ctx, url, update)
 	}
 }
 
