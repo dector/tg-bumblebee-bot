@@ -47,6 +47,11 @@ func main() {
 }
 
 func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
+	ok := processInline(b, ctx, update)
+	if ok {
+		return
+	}
+
 	if update.Message == nil {
 		return
 	}
@@ -80,6 +85,40 @@ func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}()
 }
 
+func processInline(b *bot.Bot, ctx context.Context, update *models.Update) bool {
+	query := update.InlineQuery
+	if query == nil {
+		return false
+	}
+
+	fmt.Printf("Inline: %+v\n", update.InlineQuery)
+
+	url, err := url.Parse(query.Query)
+	if err != nil {
+		return false
+	}
+	url, ok := convertUrl(*url)
+	if !ok {
+		return false
+	}
+
+	b.AnswerInlineQuery(ctx, &bot.AnswerInlineQueryParams{
+		InlineQueryID: query.ID,
+		Results: []models.InlineQueryResult{
+			&models.InlineQueryResultArticle{
+				ID:    "1",
+				Title: "Preview",
+				InputMessageContent: &models.InputTextMessageContent{
+					MessageText: url.String(),
+				},
+			},
+		},
+	})
+
+	return true
+}
+
+// TODO reuse existing url method
 func processUrl(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Update) {
 	if url.Host == "www.instagram.com" || url.Host == "instagram.com" {
 		url.Host = "kkinstagram.com"
@@ -92,6 +131,22 @@ func processUrl(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Up
 
 		sendReply(b, ctx, url, update)
 	}
+}
+
+func convertUrl(url url.URL) (*url.URL, bool) {
+	if url.Host == "www.instagram.com" || url.Host == "instagram.com" {
+		res := *(&url)
+		res.Host = "kkinstagram.com"
+		res.RawQuery = ""
+		return &res, true
+	} else if url.Host == "x.com" {
+		res := *(&url)
+		res.Host = "fixupx.com"
+		res.RawQuery = ""
+		return &res, true
+	}
+
+	return nil, false
 }
 
 func sendReply(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Update) {
