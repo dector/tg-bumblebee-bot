@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
 	"net/url"
 	"testing"
-
-	"github.com/go-telegram/bot/models"
 )
 
-func TestConvertUrl(t *testing.T) {
+func TestConvertURL(t *testing.T) {
 	tests := []struct {
 		name         string
 		input        string
@@ -56,14 +53,14 @@ func TestConvertUrl(t *testing.T) {
 			}
 
 			orig := *u
-			got, ok := convertUrl(*u)
+			got, ok := convertURL(*u)
 			if ok != tt.wantOK {
-				t.Fatalf("convertUrl() ok = %v, want %v", ok, tt.wantOK)
+				t.Fatalf("convertURL() ok = %v, want %v", ok, tt.wantOK)
 			}
 
 			if !tt.wantOK {
 				if got != nil {
-					t.Fatalf("convertUrl() url = %v, want nil", got)
+					t.Fatalf("convertURL() url = %v, want nil", got)
 				}
 				if *u != orig {
 					t.Fatalf("input url was mutated: got %+v, want %+v", *u, orig)
@@ -72,7 +69,7 @@ func TestConvertUrl(t *testing.T) {
 			}
 
 			if got == nil {
-				t.Fatalf("convertUrl() returned nil url with ok=true")
+				t.Fatalf("convertURL() returned nil url with ok=true")
 			}
 
 			if got.Host != tt.wantHost {
@@ -132,59 +129,4 @@ func TestNormalizeHost(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestProcessInlineReturnsFalseWithoutBotCall(t *testing.T) {
-	tests := []struct {
-		name   string
-		update *models.Update
-	}{
-		{
-			name: "no inline query",
-			update: &models.Update{
-				InlineQuery: nil,
-			},
-		},
-		{
-			name: "invalid inline query url",
-			update: &models.Update{
-				InlineQuery: &models.InlineQuery{Query: "://bad"},
-			},
-		},
-		{
-			name: "unsupported inline query host",
-			update: &models.Update{
-				InlineQuery: &models.InlineQuery{Query: "https://example.com/path"},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := processInline(nil, context.Background(), tt.update)
-			if got {
-				t.Fatalf("processInline() = true, want false")
-			}
-		})
-	}
-}
-
-func TestProcessUrlUnsupportedHostNoop(t *testing.T) {
-	u, err := url.Parse("https://example.com/path?x=1")
-	if err != nil {
-		t.Fatalf("parse input url: %v", err)
-	}
-	orig := *u
-
-	processUrl(nil, context.Background(), u, nil)
-
-	if *u != orig {
-		t.Fatalf("processUrl mutated unsupported url: got %+v, want %+v", *u, orig)
-	}
-}
-
-func TestHandlerNoInlineAndNoMessageDoesNothing(t *testing.T) {
-	update := &models.Update{}
-
-	handler(context.Background(), nil, update)
 }

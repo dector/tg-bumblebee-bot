@@ -8,8 +8,6 @@ import (
 	"os/signal"
 	"strings"
 
-	"github.com/go-telegram/bot"
-	"github.com/go-telegram/bot/models"
 	"github.com/joho/godotenv"
 
 	_ "golang.org/x/crypto/x509roots/fallback"
@@ -31,8 +29,8 @@ func main() {
 	// if err != nil {
 	// 	panic(err)
 	// }
+	_ = err
 
-	var token string
 	token, ok := os.LookupEnv("TG_BOT_TOKEN")
 	if !ok {
 		panic("TG_BOT_TOKEN is not provided")
@@ -45,10 +43,8 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	opts := []bot.Option{
-		bot.WithDefaultHandler(handler),
-	}
-	b, err := bot.New(token, opts...)
+	factory := NewTelegramBotFactory()
+	b, err := factory.New(token, handler)
 	if err != nil {
 		panic(err)
 	}
@@ -57,88 +53,7 @@ func main() {
 	b.Start(ctx)
 }
 
-func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	ok := processInline(b, ctx, update)
-	if ok {
-		return
-	}
-
-	if update.Message == nil {
-		return
-	}
-
-	entities := update.Message.Entities
-
-	go func() {
-		defer func() {
-			recover()
-		}()
-
-		for _, e := range entities {
-			defer func() {
-				recover()
-			}()
-
-			go func() {
-				if e.Type != models.MessageEntityTypeURL {
-					return
-				}
-
-				rawUrl := update.Message.Text[e.Offset:(e.Offset + e.Length)]
-				aUrl, err := url.Parse(rawUrl)
-				if err != nil {
-					return
-				}
-
-				processUrl(b, ctx, aUrl, update)
-			}()
-		}
-	}()
-}
-
-func processInline(b *bot.Bot, ctx context.Context, update *models.Update) bool {
-	query := update.InlineQuery
-	if query == nil {
-		return false
-	}
-
-	fmt.Printf("Inline: %+v\n", update.InlineQuery)
-
-	url, err := url.Parse(query.Query)
-	if err != nil {
-		return false
-	}
-	url, ok := convertUrl(*url)
-	if !ok {
-		return false
-	}
-
-	b.AnswerInlineQuery(ctx, &bot.AnswerInlineQueryParams{
-		InlineQueryID: query.ID,
-		Results: []models.InlineQueryResult{
-			&models.InlineQueryResultArticle{
-				ID:    "1",
-				Title: "Preview",
-				InputMessageContent: &models.InputTextMessageContent{
-					MessageText: url.String(),
-				},
-			},
-		},
-	})
-
-	return true
-}
-
-func processUrl(b *bot.Bot, ctx context.Context, parsedURL *url.URL, update *models.Update) {
-	convertedURL, ok := convertUrl(*parsedURL)
-	if !ok {
-		return
-	}
-
-	sendReply(b, ctx, convertedURL, update)
-}
-
-func convertUrl(u url.URL) (*url.URL, bool) {
+func convertURL(u url.URL) (*url.URL, bool) {
 	normalizedHost := normalizeHost(u.Host)
 
 	mappedHost, ok := hostMappings[normalizedHost]
@@ -171,14 +86,4 @@ func normalizeHost(host string) string {
 	}
 
 	return baseHost
-}
-
-func sendReply(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Update) {
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text:   url.String(),
-		ReplyParameters: &models.ReplyParameters{
-			MessageID: update.Message.ID,
-		},
-	})
 }
