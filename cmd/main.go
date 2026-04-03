@@ -121,7 +121,7 @@ func processInline(b *bot.Bot, ctx context.Context, update *models.Update) bool 
 // TODO reuse existing url method
 func processUrl(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Update) {
 	if url.Host == "www.instagram.com" || url.Host == "instagram.com" {
-		url.Host = "kkinstagram.com"
+		url.Host = "eeinstagram.com"
 		url.RawQuery = ""
 
 		sendReply(b, ctx, url, update)
@@ -136,7 +136,7 @@ func processUrl(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Up
 func convertUrl(url url.URL) (*url.URL, bool) {
 	if url.Host == "www.instagram.com" || url.Host == "instagram.com" {
 		res := *(&url)
-		res.Host = "kkinstagram.com"
+		res.Host = "eeinstagram.com"
 		res.RawQuery = ""
 		return &res, true
 	} else if url.Host == "x.com" {
