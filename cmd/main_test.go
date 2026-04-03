@@ -91,6 +91,44 @@ func TestConvertUrl(t *testing.T) {
 	}
 }
 
+func TestNormalizeHost(t *testing.T) {
+	tests := []struct {
+		name string
+		host string
+		want string
+	}{
+		{
+			name: "removes www subdomain",
+			host: "www.instagram.com",
+			want: "instagram.com",
+		},
+		{
+			name: "keeps base host",
+			host: "instagram.com",
+			want: "instagram.com",
+		},
+		{
+			name: "keeps non removable subdomain",
+			host: "m.instagram.com",
+			want: "m.instagram.com",
+		},
+		{
+			name: "keeps unrelated host",
+			host: "x.com",
+			want: "x.com",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := normalizeHost(tt.host)
+			if got != tt.want {
+				t.Fatalf("normalizeHost(%q) = %q, want %q", tt.host, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestProcessInlineReturnsFalseWithoutBotCall(t *testing.T) {
 	tests := []struct {
 		name   string

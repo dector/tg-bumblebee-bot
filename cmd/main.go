@@ -15,6 +15,15 @@ import (
 	_ "golang.org/x/crypto/x509roots/fallback"
 )
 
+var hostMappings = map[string]string{
+	"instagram.com": "eeinstagram.com",
+	"x.com":         "fixupx.com",
+}
+
+var removableSubdomains = map[string]struct{}{
+	"www": {},
+}
+
 func main() {
 	err := godotenv.Load()
 	// if err != nil {
@@ -128,20 +137,30 @@ func processUrl(b *bot.Bot, ctx context.Context, parsedURL *url.URL, update *mod
 }
 
 func convertUrl(u url.URL) (*url.URL, bool) {
-	res := u
+	normalizedHost := normalizeHost(u.Host)
 
-	switch u.Host {
-	case "www.instagram.com", "instagram.com":
-		res.Host = "eeinstagram.com"
-		res.RawQuery = ""
-		return &res, true
-	case "x.com":
-		res.Host = "fixupx.com"
-		res.RawQuery = ""
-		return &res, true
-	default:
+	mappedHost, ok := hostMappings[normalizedHost]
+	if !ok {
 		return nil, false
 	}
+
+	res := u
+	res.Host = mappedHost
+	res.RawQuery = ""
+	return &res, true
+}
+
+func normalizeHost(host string) string {
+	parts := strings.Split(host, ".")
+	if len(parts) <= 2 {
+		return host
+	}
+
+	if _, ok := removableSubdomains[parts[0]]; !ok {
+		return host
+	}
+
+	return strings.Join(parts[1:], ".")
 }
 
 func sendReply(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Update) {
