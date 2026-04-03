@@ -20,8 +20,10 @@ var hostMappings = map[string]string{
 	"x.com":         "fixupx.com",
 }
 
-var removableSubdomains = map[string]struct{}{
-	"www": {},
+var removableSubs = map[string]map[string]struct{}{
+	"instagram.com": {
+		"www": {},
+	},
 }
 
 func main() {
@@ -156,11 +158,19 @@ func normalizeHost(host string) string {
 		return host
 	}
 
-	if _, ok := removableSubdomains[parts[0]]; !ok {
+	subdomain := parts[0]
+	baseHost := strings.Join(parts[1:], ".")
+
+	allowedSubdomains, ok := removableSubs[baseHost]
+	if !ok {
 		return host
 	}
 
-	return strings.Join(parts[1:], ".")
+	if _, ok := allowedSubdomains[subdomain]; !ok {
+		return host
+	}
+
+	return baseHost
 }
 
 func sendReply(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Update) {

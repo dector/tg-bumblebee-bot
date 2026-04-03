@@ -117,6 +117,11 @@ func TestNormalizeHost(t *testing.T) {
 			host: "x.com",
 			want: "x.com",
 		},
+		{
+			name: "does not remove www for non-target host",
+			host: "www.x.com",
+			want: "www.x.com",
+		},
 	}
 
 	for _, tt := range tests {
