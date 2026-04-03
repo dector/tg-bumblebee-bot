@@ -118,35 +118,30 @@ func processInline(b *bot.Bot, ctx context.Context, update *models.Update) bool 
 	return true
 }
 
-// TODO reuse existing url method
-func processUrl(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Update) {
-	if url.Host == "www.instagram.com" || url.Host == "instagram.com" {
-		url.Host = "eeinstagram.com"
-		url.RawQuery = ""
-
-		sendReply(b, ctx, url, update)
-	} else if url.Host == "x.com" {
-		url.Host = "fixupx.com"
-		url.RawQuery = ""
-
-		sendReply(b, ctx, url, update)
+func processUrl(b *bot.Bot, ctx context.Context, parsedURL *url.URL, update *models.Update) {
+	convertedURL, ok := convertUrl(*parsedURL)
+	if !ok {
+		return
 	}
+
+	sendReply(b, ctx, convertedURL, update)
 }
 
-func convertUrl(url url.URL) (*url.URL, bool) {
-	if url.Host == "www.instagram.com" || url.Host == "instagram.com" {
-		res := *(&url)
+func convertUrl(u url.URL) (*url.URL, bool) {
+	res := u
+
+	switch u.Host {
+	case "www.instagram.com", "instagram.com":
 		res.Host = "eeinstagram.com"
 		res.RawQuery = ""
 		return &res, true
-	} else if url.Host == "x.com" {
-		res := *(&url)
+	case "x.com":
 		res.Host = "fixupx.com"
 		res.RawQuery = ""
 		return &res, true
+	default:
+		return nil, false
 	}
-
-	return nil, false
 }
 
 func sendReply(b *bot.Bot, ctx context.Context, url *url.URL, update *models.Update) {
